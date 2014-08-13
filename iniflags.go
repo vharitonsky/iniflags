@@ -26,6 +26,9 @@ var (
 func Parse() {
 	flag.Parse()
 	configPath := *config
+	if configPath == "" {
+		return
+	}
 	if configPath[0] != '/' {
 		configPath = path.Join(path.Dir(os.Args[0]), configPath)
 	}
