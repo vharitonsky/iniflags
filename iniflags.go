@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -24,10 +25,14 @@ var (
 
 func Parse() {
 	flag.Parse()
-	parsedArgs := getArgsFromConfig(*config)
-	not_set_flags := getNotSetFlags()
+	configPath := *config
+	if configPath[0] != '/' {
+		configPath = path.Join(path.Dir(os.Args[0]), configPath)
+	}
+	parsedArgs := getArgsFromConfig(configPath)
+	missingFlags := getMissingFlags()
 	for _, arg := range parsedArgs {
-		if _, found := not_set_flags[arg.key]; found {
+		if _, found := missingFlags[arg.key]; found {
 			flag.Set(arg.key, arg.value)
 		}
 	}
@@ -60,15 +65,15 @@ func getArgsFromConfig(configPath string) []Arg {
 	return args
 }
 
-func getNotSetFlags() map[string]bool {
-	not_set_flags := make(map[string]bool, 0)
+func getMissingFlags() map[string]bool {
+	missingFlags := make(map[string]bool, 0)
 	flag.VisitAll(func(f *flag.Flag) {
-		not_set_flags[f.Name] = true
+		missingFlags[f.Name] = true
 	})
 	flag.Visit(func(f *flag.Flag) {
-		delete(not_set_flags, f.Name)
+		delete(missingFlags, f.Name)
 	})
-	return not_set_flags
+	return missingFlags
 }
 
 func unquoteValue(v string) string {
