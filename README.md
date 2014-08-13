@@ -18,12 +18,12 @@ var (
 
 func main() {
 	iniflags.Parse()  # used instead of flag.Parse()
-
-	# Now all go flags used in this app obtain default values from ini file
-	# read from -config path.
-	# Flags' value priority:
-	#   - value set via command-line
-	#   - value from ini file
-	#   - default value
 }
 ```
+
+Now all go flags used in this app obtain default values from ini file
+read from -config path.
+Flag value priority:
+  - value set via command-line
+  - value from ini file
+  - default value
