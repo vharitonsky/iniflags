@@ -15,7 +15,7 @@ type Arg struct {
 }
 
 var (
-	config = flag.String("config", "dev.ini", "Path to config.")
+	config = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path")
 )
 
 var (
