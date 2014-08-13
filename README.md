@@ -2,7 +2,7 @@ Combine standard go flags with your ini file.
 
 Usage:
 
-
+```go
 import (
 	"flag"
 	...
@@ -26,3 +26,4 @@ func main() {
 	#   - value from ini file
 	#   - default value
 }
+```
