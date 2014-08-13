@@ -22,8 +22,7 @@ var (
 	KV_REGEXP    = regexp.MustCompile("\\s*=\\s*")
 )
 
-
-func IniFlagParse() {
+func Parse() {
 	flag.Parse()
 	parsedArgs := getArgsFromConfig(*config)
 	not_set_flags := getNotSetFlags()
@@ -47,7 +46,7 @@ func getArgsFromConfig(configPath string) []Arg {
 
 	var args []Arg
 	for _, line := range LINES_REGEXP.Split(string(data), -1) {
-		if line == "" || line[0] == ';' || line[0] == '#' {
+		if line == "" || line[0] == ';' || line[0] == '#' || line[0] == '[' {
 			continue
 		}
 		parts := KV_REGEXP.Split(line, 2)
