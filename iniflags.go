@@ -56,8 +56,8 @@ func getArgsFromConfig(configPath string) []Arg {
 		lineNum++
 		line, err := r.ReadString('\n')
 		log.Print(line, err)
-		if err != nil && line == ""{
-			if err == io.EOF{
+		if err != nil && line == "" {
+			if err == io.EOF {
 				break
 			}
 			log.Fatalf("Error when reading file [%s] at line %d: [%s]\n", configPath, lineNum, err)
