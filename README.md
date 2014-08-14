@@ -40,7 +40,7 @@ dev.ini
 
 ```bash
 
-go run main.go -config dev.ini -flag -flagX=foobar
+go run main.go -config dev.ini -flagX=foobar
 
 ```
 
