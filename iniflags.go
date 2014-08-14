@@ -55,7 +55,6 @@ func getArgsFromConfig(configPath string) []Arg {
 	for {
 		lineNum++
 		line, err := r.ReadString('\n')
-		log.Print(line, err)
 		if err != nil && line == "" {
 			if err == io.EOF {
 				break
