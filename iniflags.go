@@ -1,26 +1,23 @@
 package iniflags
 
 import (
+	"bufio"
 	"flag"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 )
 
 type Arg struct {
-	key, value string
+	Key     string
+	Value   string
+	LineNum int
 }
 
 var (
 	config = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path")
-)
-
-var (
-	LINES_REGEXP = regexp.MustCompile("[\\r\\n]")
-	KV_REGEXP    = regexp.MustCompile("\\s*=\\s*")
 )
 
 func Parse() {
@@ -33,10 +30,14 @@ func Parse() {
 		configPath = path.Join(path.Dir(os.Args[0]), configPath)
 	}
 	parsedArgs := getArgsFromConfig(configPath)
-	missingFlags := getMissingFlags()
+	allFlags, missingFlags := getFlags()
 	for _, arg := range parsedArgs {
-		if _, found := missingFlags[arg.key]; found {
-			flag.Set(arg.key, arg.value)
+		_, found := allFlags[arg.Key]
+		if !found {
+			log.Fatalf("Unknown flag name=[%s] found at line [%d] of file [%s]", arg.Key, arg.LineNum, configPath)
+		}
+		if _, found = missingFlags[arg.Key]; found {
+			flag.Set(arg.Key, arg.Value)
 		}
 	}
 }
@@ -47,36 +48,49 @@ func getArgsFromConfig(configPath string) []Arg {
 		log.Fatalf("cannot open config file at [%s]: [%s]\n", configPath, err)
 	}
 	defer file.Close()
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Fatalf("Error when reading config file [%s]: [%s]\n", configPath, err)
-	}
+	r := bufio.NewReader(file)
 
 	var args []Arg
-	for _, line := range LINES_REGEXP.Split(string(data), -1) {
+	var lineNum int
+	for {
+		lineNum++
+		line, err := r.ReadString('\n')
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("error when reading file [%s] at line %d: [%s]\n", configPath, lineNum, err)
+		}
+		line = strings.TrimSpace(line)
 		if line == "" || line[0] == ';' || line[0] == '#' || line[0] == '[' {
 			continue
 		}
-		parts := KV_REGEXP.Split(line, 2)
+		parts := strings.SplitN(line, "=", 2)
 		if len(parts) != 2 {
-			log.Fatalf("Cannot split line=[%s] into key and value in config file [%s]", line, configPath)
+			log.Fatalf("Cannot split [%s] at line %d into key and value in config file [%s]", line, lineNum, configPath)
 		}
-		key := parts[0]
-		value := unquoteValue(parts[1])
-		args = append(args, Arg{key: key, value: value})
+		key := strings.TrimSpace(parts[0])
+		value := unquoteValue(strings.TrimSpace(parts[1]))
+		args = append(args, Arg{Key: key, Value: value, LineNum: lineNum})
 	}
 	return args
 }
 
-func getMissingFlags() map[string]bool {
-	missingFlags := make(map[string]bool, 0)
-	flag.VisitAll(func(f *flag.Flag) {
-		missingFlags[f.Name] = true
-	})
+func getFlags() (allFlags, missingFlags map[string]bool) {
+	setFlags := make(map[string]bool)
 	flag.Visit(func(f *flag.Flag) {
-		delete(missingFlags, f.Name)
+		setFlags[f.Name] = true
 	})
-	return missingFlags
+
+	allFlags = make(map[string]bool)
+	missingFlags = make(map[string]bool)
+	flag.VisitAll(func(f *flag.Flag) {
+		allFlags[f.Name] = true
+		if _, ok := setFlags[f.Name]; !ok {
+			missingFlags[f.Name] = true
+		}
+	})
+	return
 }
 
 func unquoteValue(v string) string {
