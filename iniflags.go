@@ -70,7 +70,7 @@ func getArgsFromConfig(configPath string) []Arg {
 			log.Fatalf("Cannot split [%s] at line %d into key and value in config file [%s]", line, lineNum, configPath)
 		}
 		key := strings.TrimSpace(parts[0])
-		value := unquoteValue(strings.TrimSpace(parts[1]))
+		value := unquoteValue(strings.TrimSpace(parts[1]), lineNum, configPath)
 		args = append(args, Arg{Key: key, Value: value, LineNum: lineNum})
 	}
 	return args
@@ -93,15 +93,20 @@ func getFlags() (allFlags, missingFlags map[string]bool) {
 	return
 }
 
-func unquoteValue(v string) string {
+func unquoteValue(v string, lineNum int, configPath string) string {
 	if v[0] != '"' {
-		return v
+		return removeTrailingComments(v)
 	}
 	n := strings.LastIndex(v, "\"")
 	if n == -1 {
-		return v
+		log.Fatalf("Unclosed string found [%s] at line %d in config file [%s]", v, lineNum, configPath)
 	}
 	v = v[1:n]
 	v = strings.Replace(v, "\\\"", "\"", -1)
 	return strings.Replace(v, "\\n", "\n", -1)
+}
+
+func removeTrailingComments(v string) string {
+	v = strings.Split(v, "#")[0]
+	return strings.Split(v, ";")[0]
 }
