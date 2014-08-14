@@ -5,6 +5,11 @@ Combine standard go flags with your ini file.
 
 Usage:
 
+```bash
+
+go get -u -a github.com/vharitonsky/iniflags
+```
+
 main.go
 ```go
 package main
