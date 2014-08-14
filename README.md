@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	flag1 = flag.String("flag1", "default1", "defaultFlag1")
+	flag1 = flag.String("flag1", "default1", "Description1")
 	...
-	flagN = flag.Int("flagN", 123, "defaultFlagN")
+	flagN = flag.Int("flagN", 123, "DescriptionN")
 )
 
 func main() {
@@ -30,17 +30,22 @@ func main() {
 dev.ini
 
 ```ini
-    flag1="val1"
-    flag2=4
+    # comment1
+    flag1 = "val1"  # comment2
+
+    ...
+    [section]
+    flagN = 4  # comment3
 ```
 
 ```bash
 
-go run main.go -config dev.ini
+go run main.go -config dev.ini -flag -flagX=foobar
 
 ```
 
-Now all unset flags will get their value from .ini file provided in -config path. If value is not found in the .ini, flag will retain it's default value.
+Now all unset flags will get their value from .ini file provided in -config path.
+If value is not found in the .ini, flag will retain it's default value.
 
 Flag value priority:
   - value set via command-line
