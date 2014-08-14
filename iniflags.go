@@ -44,7 +44,7 @@ func Parse() {
 func getArgsFromConfig(configPath string) []Arg {
 	file, err := os.Open(configPath)
 	if err != nil {
-		log.Fatalf("cannot open config file at [%s]: [%s]\n", configPath, err)
+		log.Fatalf("Cannot open config file at [%s]: [%s]\n", configPath, err)
 	}
 	defer file.Close()
 	data, err := ioutil.ReadAll(file)
@@ -61,9 +61,7 @@ func getArgsFromConfig(configPath string) []Arg {
 		if len(parts) != 2 {
 			log.Fatalf("Cannot split line=[%s] into key and value in config file [%s]", line, configPath)
 		}
-		key := parts[0]
-		value := unquoteValue(parts[1])
-		args = append(args, Arg{key: key, value: value})
+		args = append(args, Arg{key: parts[0], value: unquoteValue(parts[1])})
 	}
 	return args
 }
