@@ -108,5 +108,6 @@ func unquoteValue(v string, lineNum int, configPath string) string {
 
 func removeTrailingComments(v string) string {
 	v = strings.Split(v, "#")[0]
-	return strings.Split(v, ";")[0]
+	v = strings.Split(v, ";")[0]
+	return strings.TrimSpace(v)
 }

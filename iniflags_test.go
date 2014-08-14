@@ -6,7 +6,7 @@ import (
 
 func TestUnquoteValue(t *testing.T) {
 	val := "\"val\"\n"
-	fixed_val := unquoteValue(val)
+	fixed_val := unquoteValue(val, 0, "")
 	if fixed_val != "val" {
 		t.Error("Value should be unquoted and stripped, got", fixed_val)
 		t.Fail()
@@ -34,7 +34,7 @@ func TestGetArgsFromConfig(t *testing.T) {
 		t.Log(arg.Key, arg.Value)
 		if arg.Key == "var0" {
 			if arg.Value != "val0" {
-				t.Error("Val of 'var0' should be 'val0', got", arg.Value)
+				t.Errorf("Val of 'var0' should be 'val0', got '%s'", arg.Value)
 				t.Fail()
 			} else {
 				checked_var0 = true
@@ -42,7 +42,7 @@ func TestGetArgsFromConfig(t *testing.T) {
 		}
 		if arg.Key == "var1" {
 			if arg.Value != "val1" {
-				t.Error("Val of 'var1' should be 'val1', got", arg.Value)
+				t.Error("Val of 'var1' should be 'val1', got '%s'", arg.Value)
 				t.Fail()
 			} else {
 				checked_var1 = true
