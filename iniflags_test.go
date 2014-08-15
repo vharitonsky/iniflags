@@ -29,7 +29,7 @@ func TestGetFlags(t *testing.T) {
 
 func TestGetArgsFromConfig(t *testing.T) {
 	args := getArgsFromConfig("test_config.ini")
-	checked_var0, checked_var1 := false, false
+	checked_var0, checked_var1, checked_var2 := false, false, false
 	for _, arg := range args {
 		t.Log(arg.Key, arg.Value)
 		if arg.Key == "var0" {
@@ -41,16 +41,24 @@ func TestGetArgsFromConfig(t *testing.T) {
 			}
 		}
 		if arg.Key == "var1" {
-			if arg.Value != "val1\n\\\"\nx" {
-				t.Error("Val of 'var1' should be 'val1', got '%s'", arg.Value)
+			if arg.Value != "val#1\n\\\"\nx" {
+				t.Errorf("Invalid val for var1='%s'", arg.Value)
 				t.Fail()
 			} else {
 				checked_var1 = true
 			}
 		}
+		if arg.Key == "var2" {
+			if arg.Value != "1234" {
+				t.Errorf("Val of 'var2' should be '1234', got '%s'", arg.Value)
+				t.Fail()
+			} else {
+				checked_var2 = true
+			}
+		}
 	}
-	if !checked_var0 || !checked_var1 {
-		t.Error("Not all vals checked:", args, checked_var0, checked_var1)
+	if !checked_var0 || !checked_var1 || !checked_var2 {
+		t.Errorf("Not all vals checked: args=[%v], %v, %v, %v", args, checked_var0, checked_var1, checked_var2)
 		t.Fail()
 	}
 }

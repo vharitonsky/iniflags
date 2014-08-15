@@ -18,16 +18,15 @@ type Arg struct {
 
 var (
 	config = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path")
+
+	importStack []string
 )
 
 func Parse() {
 	flag.Parse()
-	configPath := *config
+	configPath := combinePath(os.Args[0], *config)
 	if configPath == "" {
 		return
-	}
-	if configPath[0] != '/' {
-		configPath = path.Join(path.Dir(os.Args[0]), configPath)
 	}
 	parsedArgs := getArgsFromConfig(configPath)
 	allFlags, missingFlags := getFlags()
@@ -41,7 +40,18 @@ func Parse() {
 	}
 }
 
+func checkImportRecursion(configPath string) {
+	for _, path := range importStack {
+		if path == configPath {
+			log.Fatalf("Import recursion found for [%s]: %v", configPath, importStack)
+		}
+	}
+}
+
 func getArgsFromConfig(configPath string) []Arg {
+	checkImportRecursion(configPath)
+	importStack = append(importStack, configPath)
+
 	file, err := os.Open(configPath)
 	if err != nil {
 		log.Fatalf("Cannot open config file at [%s]: [%s]\n", configPath, err)
@@ -61,6 +71,12 @@ func getArgsFromConfig(configPath string) []Arg {
 			log.Fatalf("Error when reading file [%s] at line %d: [%s]\n", configPath, lineNum, err)
 		}
 		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "#import ") {
+			importPath := unquoteValue(line[7:], lineNum, configPath)
+			importPath = combinePath(configPath, importPath)
+			args = append(args, getArgsFromConfig(importPath)...)
+			continue
+		}
 		if line == "" || line[0] == ';' || line[0] == '#' || line[0] == '[' {
 			continue
 		}
@@ -69,10 +85,19 @@ func getArgsFromConfig(configPath string) []Arg {
 			log.Fatalf("Cannot split [%s] at line %d into key and value in config file [%s]", line, lineNum, configPath)
 		}
 		key := strings.TrimSpace(parts[0])
-		value := unquoteValue(strings.TrimSpace(parts[1]), lineNum, configPath)
+		value := unquoteValue(parts[1], lineNum, configPath)
 		args = append(args, Arg{Key: key, Value: value, LineNum: lineNum})
 	}
+
+	importStack = importStack[:len(importStack)-1]
 	return args
+}
+
+func combinePath(basePath, relPath string) string {
+	if relPath == "" || relPath[0] == '/' {
+		return relPath
+	}
+	return path.Join(path.Dir(basePath), relPath)
 }
 
 func getFlags() (allFlags, missingFlags map[string]bool) {
@@ -93,6 +118,7 @@ func getFlags() (allFlags, missingFlags map[string]bool) {
 }
 
 func unquoteValue(v string, lineNum int, configPath string) string {
+	v = strings.TrimSpace(v)
 	if v[0] != '"' {
 		return removeTrailingComments(v)
 	}

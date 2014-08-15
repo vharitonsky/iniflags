@@ -1,7 +1,7 @@
 Hybrid configuration library
 ============================
 
-Combine standard go flags with your ini file.
+Combine standard go flags with ini files.
 
 Usage:
 
@@ -57,4 +57,22 @@ Flag value priority:
   - value from ini file
   - default value
 
-Iniflags is compatible with real .ini config files with [sections] and #comments. They will be skipped during parsing.
+Iniflags is compatible with real .ini config files with [sections] and #comments.
+Sections and comments are skipped during config file parsing.
+
+Iniflags can import another ini files. For example,
+
+base.ini
+```ini
+flag1 = value1
+flag2 = value2
+```
+
+dev.ini
+```ini
+#import "base.ini"
+# Now flag1="value1", flag2="value2"
+
+flag2 = foobar
+# Now flag1="value1", while flag2="foobar"
+```
