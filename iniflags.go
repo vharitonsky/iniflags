@@ -3,6 +3,7 @@ package iniflags
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -17,13 +18,17 @@ type Arg struct {
 }
 
 var (
-	config = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path")
+	config    = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path")
+	dumpflags = flag.String("dumpflags", "", "Path to dump all current flags to. Optional.")
 
 	importStack []string
 )
 
 func Parse() {
 	flag.Parse()
+	if *dumpflags != "" {
+		dumpFlagsToFile(*dumpflags)
+	}
 	configPath := combinePath(os.Args[0], *config)
 	if configPath == "" {
 		return
@@ -115,6 +120,23 @@ func getFlags() (allFlags, missingFlags map[string]bool) {
 		}
 	})
 	return
+}
+
+func dumpFlagsToFile(dumpflagsPath string) {
+	dumpflagsPath = dumpflagsPath
+	file, err := os.Create(dumpflagsPath)
+	if err != nil {
+		log.Fatalf("Cannot open flag dump file at [%s]: [%s]\n", dumpflagsPath, err)
+	}
+	defer file.Close()
+	flag.VisitAll(func(f *flag.Flag) {
+		if f.Name != "config" && f.Name != "dumpflags" {
+			_, err = file.WriteString(fmt.Sprintf("%s = %s ; %s\n", f.Name, f.Value, f.Usage))
+			if err != nil {
+				log.Fatalf("Cannot write to flag dump file at [%s]: [%s]\n", dumpflagsPath, err)
+			}
+		}
+	})
 }
 
 func unquoteValue(v string, lineNum int, configPath string) string {

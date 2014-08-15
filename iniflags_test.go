@@ -4,6 +4,23 @@ import (
 	"testing"
 )
 
+func TestRemoveTrailingComments(t *testing.T) {
+	hash_commented := "v = v # test_comment"
+	clean := removeTrailingComments(hash_commented)
+	if clean != "v = v" {
+		t.Errorf("Supposed to get 'v = v ', got '%s'", clean)
+		t.Fail()
+
+	}
+	colon_commented := "v = v ; test_comment"
+	clean = removeTrailingComments(colon_commented)
+	if clean != "v = v" {
+		t.Errorf("Supposed to get 'v = v ', got '%s'", clean)
+		t.Fail()
+	}
+
+}
+
 func TestUnquoteValue(t *testing.T) {
 	val := "\"val\"\n"
 	fixed_val := unquoteValue(val, 0, "")
