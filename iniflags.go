@@ -32,11 +32,10 @@ func Parse() {
 	parsedArgs := getArgsFromConfig(configPath)
 	allFlags, missingFlags := getFlags()
 	for _, arg := range parsedArgs {
-		_, found := allFlags[arg.Key]
-		if !found {
+		if _, found := allFlags[arg.Key]; !found {
 			log.Fatalf("Unknown flag name=[%s] found at line [%d] of file [%s]", arg.Key, arg.LineNum, configPath)
 		}
-		if _, found = missingFlags[arg.Key]; found {
+		if _, found := missingFlags[arg.Key]; found {
 			flag.Set(arg.Key, arg.Value)
 		}
 	}
