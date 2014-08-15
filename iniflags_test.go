@@ -41,7 +41,7 @@ func TestGetArgsFromConfig(t *testing.T) {
 			}
 		}
 		if arg.Key == "var1" {
-			if arg.Value != "val1" {
+			if arg.Value != "val1\n\\\"\nx" {
 				t.Error("Val of 'var1' should be 'val1', got '%s'", arg.Value)
 				t.Fail()
 			} else {

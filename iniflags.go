@@ -103,7 +103,8 @@ func unquoteValue(v string, lineNum int, configPath string) string {
 	}
 	v = v[1:n]
 	v = strings.Replace(v, "\\\"", "\"", -1)
-	return strings.Replace(v, "\\n", "\n", -1)
+	v = strings.Replace(v, "\\n", "\n", -1)
+	return strings.Replace(v, "\\\\", "\\", -1)
 }
 
 func removeTrailingComments(v string) string {
