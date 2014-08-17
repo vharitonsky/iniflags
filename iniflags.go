@@ -26,10 +26,14 @@ var (
 
 func Parse() {
 	flag.Parse()
+	parseConfigFlags()
 	if *dumpflags {
 		dumpFlags()
 		os.Exit(0)
 	}
+}
+
+func parseConfigFlags() {
 	configPath := combinePath(os.Args[0], *config)
 	if configPath == "" {
 		return
@@ -132,7 +136,7 @@ func dumpFlags() {
 }
 
 func escapeUsage(s string) string {
-	return strings.Replace(s, "\n", " ", -1)
+	return strings.Replace(s, "\n", "\n    #", -1)
 }
 
 func quoteValue(v string) string {

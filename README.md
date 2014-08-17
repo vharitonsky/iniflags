@@ -76,3 +76,12 @@ dev.ini
 flag2 = foobar
 # Now flag1="value1", while flag2="foobar"
 ```
+
+
+All flag defined in the app can be dumped into stdout with ini-compatible sytax
+by passing -dumpflags flag to the app. The following command creates ini-file
+with all the flags defined in the app:
+
+```bash
+/path/to/the/app -dumpflags > initial-config.ini
+```
