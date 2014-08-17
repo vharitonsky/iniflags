@@ -136,7 +136,7 @@ func dumpFlags() {
 }
 
 func escapeUsage(s string) string {
-	return strings.Replace(s, "\n", "\n    #", -1)
+	return strings.Replace(s, "\n", "\n    # ", -1)
 }
 
 func quoteValue(v string) string {
