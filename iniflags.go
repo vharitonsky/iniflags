@@ -19,15 +19,16 @@ type Arg struct {
 
 var (
 	config    = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path")
-	dumpflags = flag.String("dumpflags", "", "Path to dump all current flags to. Optional.")
+	dumpflags = flag.Bool("dumpflags", false, "Dumps values for all flags defined in the app into stdout in ini-compatible syntax and terminates the app")
 
 	importStack []string
 )
 
 func Parse() {
 	flag.Parse()
-	if *dumpflags != "" {
-		dumpFlagsToFile(*dumpflags)
+	if *dumpflags {
+		dumpFlags()
+		os.Exit(0)
 	}
 	configPath := combinePath(os.Args[0], *config)
 	if configPath == "" {
@@ -122,21 +123,26 @@ func getFlags() (allFlags, missingFlags map[string]bool) {
 	return
 }
 
-func dumpFlagsToFile(dumpflagsPath string) {
-	dumpflagsPath = dumpflagsPath
-	file, err := os.Create(dumpflagsPath)
-	if err != nil {
-		log.Fatalf("Cannot open flag dump file at [%s]: [%s]\n", dumpflagsPath, err)
-	}
-	defer file.Close()
+func dumpFlags() {
 	flag.VisitAll(func(f *flag.Flag) {
 		if f.Name != "config" && f.Name != "dumpflags" {
-			_, err = file.WriteString(fmt.Sprintf("%s = %s ; %s\n", f.Name, f.Value, f.Usage))
-			if err != nil {
-				log.Fatalf("Cannot write to flag dump file at [%s]: [%s]\n", dumpflagsPath, err)
-			}
+			fmt.Printf("%s = %s  # %s\n", f.Name, quoteValue(f.Value.String()), escapeUsage(f.Usage))
 		}
 	})
+}
+
+func escapeUsage(s string) string {
+	return strings.Replace(s, "\n", " ", -1)
+}
+
+func quoteValue(v string) string {
+	if !strings.ContainsAny(v, "\n#;") && strings.TrimSpace(v) == v {
+		return v
+	}
+	v = strings.Replace(v, "\\", "\\\\", -1)
+	v = strings.Replace(v, "\n", "\\n", -1)
+	v = strings.Replace(v, "\"", "\\\"", -1)
+	return fmt.Sprintf("\"%s\"", v)
 }
 
 func unquoteValue(v string, lineNum int, configPath string) string {
