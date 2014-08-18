@@ -35,7 +35,7 @@ func Parse() {
 
 func parseConfigFlags() {
 	configPath := *config
-	if !strings.HasPrefix(configPath, "./"){
+	if !strings.HasPrefix(configPath, "./") {
 		configPath = combinePath(os.Args[0], *config)
 	}
 	if configPath == "" {
