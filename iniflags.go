@@ -29,7 +29,10 @@ func Parse() {
 	if *dumpflags != "" {
 		dumpFlagsToFile(*dumpflags)
 	}
-	configPath := combinePath(os.Args[0], *config)
+	configPath := *config
+	if !strings.HasPrefix(configPath, "./"){
+		configPath = combinePath(os.Args[0], *config)
+	}
 	if configPath == "" {
 		return
 	}
