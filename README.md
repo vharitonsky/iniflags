@@ -78,7 +78,7 @@ flag2 = foobar
 ```
 
 
-All flag defined in the app can be dumped into stdout with ini-compatible sytax
+All flags defined in the app can be dumped into stdout with ini-compatible sytax
 by passing -dumpflags flag to the app. The following command creates ini-file
 with all the flags defined in the app:
 
@@ -87,7 +87,7 @@ with all the flags defined in the app:
 ```
 
 
-Iniflags also support config reload on SIGHUP signal:
+Iniflags also supports config reload on SIGHUP signal:
 
 ```bash
 kill -s SIGHUP <app_pid>
