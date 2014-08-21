@@ -85,3 +85,11 @@ with all the flags defined in the app:
 ```bash
 /path/to/the/app -dumpflags > initial-config.ini
 ```
+
+
+Iniflags also support config reload on SIGHUP signal:
+
+```bash
+kill -s SIGHUP <app_pid>
+```
+
