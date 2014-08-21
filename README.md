@@ -28,7 +28,7 @@ var (
 )
 
 func main() {
-	iniflags.Parse()  // used instead of flag.Parse()
+	iniflags.Parse()  // use instead of flag.Parse()
 }
 ```
 
@@ -49,8 +49,8 @@ go run main.go -config dev.ini -flagX=foobar
 
 ```
 
-Now all unset flags will get their value from .ini file provided in -config path.
-If value is not found in the .ini, flag will retain it's default value.
+Now all unset flags obtain their value from .ini file provided in -config path.
+If value is not found in the .ini, flag will retain its' default value.
 
 Flag value priority:
   - value set via command-line
@@ -60,7 +60,7 @@ Flag value priority:
 Iniflags is compatible with real .ini config files with [sections] and #comments.
 Sections and comments are skipped during config file parsing.
 
-Iniflags can import another ini files. For example,
+Iniflags can #import another ini files. For example,
 
 base.ini
 ```ini
@@ -79,7 +79,7 @@ flag2 = foobar
 
 
 All flag defined in the app can be dumped into stdout with ini-compatible sytax
-by passing -dumpflags flag to the app. The following command creates ini-file
+by passing -dumpflags flag to the app. The following command creates ini file
 with all the flags defined in the app:
 
 ```bash
