@@ -7,8 +7,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
 )
 
 type Arg struct {
@@ -30,6 +32,15 @@ func Parse() {
 	if *dumpflags {
 		dumpFlags()
 		os.Exit(0)
+	}
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGHUP)
+	go sighupHandler(ch)
+}
+
+func sighupHandler(ch <-chan os.Signal) {
+	for _ = range ch {
+		parseConfigFlags()
 	}
 }
 
