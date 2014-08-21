@@ -23,8 +23,8 @@ func TestRemoveTrailingComments(t *testing.T) {
 
 func TestUnquoteValue(t *testing.T) {
 	val := "\"val\"\n"
-	fixed_val := unquoteValue(val, 0, "")
-	if fixed_val != "val" {
+	fixed_val, ok := unquoteValue(val, 0, "")
+	if !ok || fixed_val != "val" {
 		t.Error("Value should be unquoted and stripped, got", fixed_val)
 		t.Fail()
 	}
@@ -45,7 +45,10 @@ func TestGetFlags(t *testing.T) {
 }
 
 func TestGetArgsFromConfig(t *testing.T) {
-	args := getArgsFromConfig("test_config.ini")
+	args, ok := getArgsFromConfig("test_config.ini")
+	if !ok {
+		t.Fail()
+	}
 	checked_var0, checked_var1, checked_var2 := false, false, false
 	for _, arg := range args {
 		t.Log(arg.Key, arg.Value)
