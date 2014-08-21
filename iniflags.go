@@ -14,9 +14,10 @@ import (
 )
 
 type Arg struct {
-	Key     string
-	Value   string
-	LineNum int
+	Key      string
+	Value    string
+	FilePath string
+	LineNum  int
 }
 
 var (
@@ -62,9 +63,11 @@ func parseConfigFlags() bool {
 	allFlags, missingFlags := getFlags()
 	for _, arg := range parsedArgs {
 		if _, found := allFlags[arg.Key]; !found {
-			log.Printf("Unknown flag name=[%s] found at line [%d] of file [%s]", arg.Key, arg.LineNum, configPath)
+			log.Printf("Unknown flag name=[%s] found at line [%d] of file [%s]", arg.Key, arg.LineNum, arg.FilePath)
 			return false
 		}
+	}
+	for _, arg := range parsedArgs {
 		if _, found := missingFlags[arg.Key]; found {
 			flag.Set(arg.Key, arg.Value)
 		}
@@ -134,7 +137,7 @@ func getArgsFromConfig(configPath string) (args []Arg, ok bool) {
 		if !ok {
 			return nil, false
 		}
-		args = append(args, Arg{Key: key, Value: value, LineNum: lineNum})
+		args = append(args, Arg{Key: key, Value: value, FilePath: configPath, LineNum: lineNum})
 	}
 
 	importStack = importStack[:len(importStack)-1]
