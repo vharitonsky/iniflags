@@ -80,20 +80,35 @@ func parseConfigFlags() bool {
 	if !ok {
 		return false
 	}
-	allFlags, missingFlags := getFlags()
+	missingFlags := getMissingFlags()
+
+	ok = true
+	oldFlagValues := make(map[string]string)
 	for _, arg := range parsedArgs {
-		if _, found := allFlags[arg.Key]; !found {
+		f := flag.Lookup(arg.Key)
+		if f == nil {
 			log.Printf("Unknown flag name=[%s] found at line [%d] of file [%s]", arg.Key, arg.LineNum, arg.FilePath)
-			return false
+			ok = false
+			continue
 		}
-	}
-	for _, arg := range parsedArgs {
+
+		oldFlagValues[arg.Key] = f.Value.String()
 		if _, found := missingFlags[arg.Key]; found {
-			flag.Set(arg.Key, arg.Value)
+			if err := flag.Set(arg.Key, arg.Value); err != nil {
+				log.Printf("Error when parsing flag [%s] value [%s] at line [%d] of file [%s]: [%s]", arg.Key, arg.Value, arg.LineNum, arg.FilePath, err)
+				ok = false
+			}
 		}
 	}
 
-	return true
+	if !ok {
+		// restore old flag values
+		for k, v := range oldFlagValues {
+			flag.Set(k, v)
+		}
+	}
+
+	return ok
 }
 
 func checkImportRecursion(configPath string) bool {
@@ -172,21 +187,19 @@ func combinePath(basePath, relPath string) string {
 	return path.Join(path.Dir(basePath), relPath)
 }
 
-func getFlags() (allFlags, missingFlags map[string]bool) {
+func getMissingFlags() map[string]bool {
 	setFlags := make(map[string]bool)
 	flag.Visit(func(f *flag.Flag) {
 		setFlags[f.Name] = true
 	})
 
-	allFlags = make(map[string]bool)
-	missingFlags = make(map[string]bool)
+	missingFlags := make(map[string]bool)
 	flag.VisitAll(func(f *flag.Flag) {
-		allFlags[f.Name] = true
 		if _, ok := setFlags[f.Name]; !ok {
 			missingFlags[f.Name] = true
 		}
 	})
-	return
+	return missingFlags
 }
 
 func dumpFlags() {
