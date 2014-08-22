@@ -77,6 +77,18 @@ flag2 = foobar
 # Now flag1="value1", while flag2="foobar"
 ```
 
+Both -config path and imported ini files can be addressed via http
+or https links:
+
+```bash
+/path/to/app -config=https://google.com/path/to/config.ini
+```
+
+config.ini
+```ini
+# The following line will import configs from the given http link.
+#import "http://google.com/path/to/config.ini"
+```
 
 All flags defined in the app can be dumped into stdout with ini-compatible sytax
 by passing -dumpflags flag to the app. The following command creates ini-file 

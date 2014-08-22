@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path"
@@ -69,9 +71,12 @@ func sighupHandler(ch <-chan os.Signal) {
 }
 
 func parseConfigFlags() bool {
+	var ok bool
 	configPath := *config
 	if !strings.HasPrefix(configPath, "./") {
-		configPath = combinePath(os.Args[0], *config)
+		if configPath, ok = combinePath(os.Args[0], *config); !ok {
+			return false
+		}
 	}
 	if configPath == "" {
 		return true
@@ -130,9 +135,8 @@ func getArgsFromConfig(configPath string) (args []Arg, ok bool) {
 		importStack = importStack[:len(importStack)-1]
 	}()
 
-	file, err := os.Open(configPath)
-	if err != nil {
-		log.Printf("Cannot open config file at [%s]: [%s]\n", configPath, err)
+	file := openConfigFile(configPath)
+	if file == nil {
 		return nil, false
 	}
 	defer file.Close()
@@ -155,7 +159,9 @@ func getArgsFromConfig(configPath string) (args []Arg, ok bool) {
 			if !ok {
 				return nil, false
 			}
-			importPath = combinePath(configPath, importPath)
+			if importPath, ok = combinePath(configPath, importPath); !ok {
+				return nil, false
+			}
 			importArgs, ok := getArgsFromConfig(importPath)
 			if !ok {
 				return nil, false
@@ -182,11 +188,51 @@ func getArgsFromConfig(configPath string) (args []Arg, ok bool) {
 	return args, true
 }
 
-func combinePath(basePath, relPath string) string {
-	if relPath == "" || relPath[0] == '/' {
-		return relPath
+func openConfigFile(path string) io.ReadCloser {
+	if isHttp(path) {
+		resp, err := http.Get(path)
+		if err != nil {
+			log.Printf("Cannot load config file at [%s]: [%s]\n", path, err)
+			return nil
+		}
+		if resp.StatusCode != http.StatusOK {
+			log.Printf("Unexpected http status code when obtaining config file [%s]: %d. Expected %d\n", path, resp.StatusCode, http.StatusOK)
+			return nil
+		}
+		return resp.Body
 	}
-	return path.Join(path.Dir(basePath), relPath)
+
+	file, err := os.Open(path)
+	if err != nil {
+		log.Printf("Cannot open config file at [%s]: [%s]\n", path, err)
+		return nil
+	}
+	return file
+}
+
+func combinePath(basePath, relPath string) (string, bool) {
+	if isHttp(basePath) {
+		base, err := url.Parse(basePath)
+		if err != nil {
+			log.Printf("Error when parsing http base path [%s]: %s\n", basePath, err)
+			return "", false
+		}
+		rel, err := url.Parse(relPath)
+		if err != nil {
+			log.Printf("Error when parsing http rel path [%s] for base [%s]: %s\n", relPath, basePath, err)
+			return "", false
+		}
+		return base.ResolveReference(rel).String(), true
+	}
+
+	if relPath == "" || relPath[0] == '/' || isHttp(relPath) {
+		return relPath, true
+	}
+	return path.Join(path.Dir(basePath), relPath), true
+}
+
+func isHttp(path string) bool {
+	return strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://")
 }
 
 func getMissingFlags() map[string]bool {
