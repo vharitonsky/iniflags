@@ -93,3 +93,18 @@ Iniflags also supports config reload on SIGHUP signal:
 kill -s SIGHUP <app_pid>
 ```
 
+
+Advanced usage.
+
+```go
+import (
+	"flag"
+	"iniflags"
+)
+
+var listenPort = flag.Int("listenPort", 1234, "Port to listen to")
+
+func init() {
+	iniflags.AddConfigReadCallback(func() { restartServerOnPort(*listenPort) })
+}
+```

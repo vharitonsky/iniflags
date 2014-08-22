@@ -24,9 +24,11 @@ var (
 	config    = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path")
 	dumpflags = flag.Bool("dumpflags", false, "Dumps values for all flags defined in the app into stdout in ini-compatible syntax and terminates the app")
 
-	importStack []string
+	configReadCallbacks []func()
+	importStack         []string
 )
 
+// Use instead of flag.Parse().
 func Parse() {
 	flag.Parse()
 	if !parseConfigFlags() {
@@ -36,15 +38,33 @@ func Parse() {
 		dumpFlags()
 		os.Exit(0)
 	}
+	issueConfigReadCallbacks()
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGHUP)
 	go sighupHandler(ch)
 }
 
+// Registers the callback, which is called after each config read.
+// An app can register arbitrary number of callbacks.
+// Usually these callbacks should be registered in init() functions.
+// The callbacks should be used for re-applying new config values across
+// the application.
+func AddConfigReadCallback(f func()) {
+	configReadCallbacks = append(configReadCallbacks, f)
+}
+
+func issueConfigReadCallbacks() {
+	for _, f := range configReadCallbacks {
+		f()
+	}
+}
+
 func sighupHandler(ch <-chan os.Signal) {
 	for _ = range ch {
 		log.Printf("Re-reading flags from config files\n")
-		parseConfigFlags()
+		if parseConfigFlags() {
+			issueConfigReadCallbacks()
+		}
 	}
 }
 
@@ -72,6 +92,7 @@ func parseConfigFlags() bool {
 			flag.Set(arg.Key, arg.Value)
 		}
 	}
+
 	return true
 }
 
