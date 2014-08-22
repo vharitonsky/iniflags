@@ -126,6 +126,9 @@ func getArgsFromConfig(configPath string) (args []Arg, ok bool) {
 		return nil, false
 	}
 	importStack = append(importStack, configPath)
+	defer func() {
+		importStack = importStack[:len(importStack)-1]
+	}()
 
 	file, err := os.Open(configPath)
 	if err != nil {
@@ -176,7 +179,6 @@ func getArgsFromConfig(configPath string) (args []Arg, ok bool) {
 		args = append(args, Arg{Key: key, Value: value, FilePath: configPath, LineNum: lineNum})
 	}
 
-	importStack = importStack[:len(importStack)-1]
 	return args, true
 }
 
