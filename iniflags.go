@@ -93,8 +93,8 @@ func parseConfigFlags() bool {
 		}
 
 		oldFlagValues[arg.Key] = f.Value.String()
-		if _, found := missingFlags[arg.Key]; found {
-			if err := flag.Set(arg.Key, arg.Value); err != nil {
+		if _, found := missingFlags[f.Name]; found {
+			if err := f.Value.Set(arg.Value); err != nil {
 				log.Printf("Error when parsing flag [%s] value [%s] at line [%d] of file [%s]: [%s]", arg.Key, arg.Value, arg.LineNum, arg.FilePath, err)
 				ok = false
 			}
