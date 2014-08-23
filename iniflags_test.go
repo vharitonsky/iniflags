@@ -77,3 +77,14 @@ func TestGetArgsFromConfig(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestIsHttp(t *testing.T) {
+	if !isHttp("http://example.com") {
+		t.Errorf("http://example.com should must be recognized as http path")
+		t.Fail()
+	}
+	if !isHttp("hTtpS://example.com") {
+		t.Errorf("hTtpS://example.com should must be recognized as http path")
+		t.Fail()
+	}
+}
