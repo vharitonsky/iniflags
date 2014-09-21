@@ -80,9 +80,9 @@ func configUpdater() {
 func updateConfig() {
 	if oldFlagValues, ok := parseConfigFlags(); ok {
 		if len(oldFlagValues) > 0 {
-			var modifiedFlags []string
+			modifiedFlags := make(map[string]string)
 			for k, _ := range oldFlagValues {
-				modifiedFlags = append(modifiedFlags, k)
+				modifiedFlags[k] = flag.Lookup(k).Value.String()
 			}
 			log.Printf("iniflags: read updated config. Modified flags are: %v\n", modifiedFlags)
 		}
