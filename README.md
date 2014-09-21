@@ -99,24 +99,45 @@ with all the flags defined in the app:
 ```
 
 
-Iniflags also supports config reload on SIGHUP signal:
+Iniflags also supports two types of online config reload:
+
+  * Via SIGHUP signal:
 
 ```bash
 kill -s SIGHUP <app_pid>
+```
+
+  * Via -configUpdateInterval flag. The following line will re-read config every 5 seconds:
+
+```bash
+/path/to/app -config=/path/to/config.ini -configUpdateInterval=5s
 ```
 
 
 Advanced usage.
 
 ```go
+package main
+
 import (
 	"flag"
 	"iniflags"
+	"log"
 )
 
 var listenPort = flag.Int("listenPort", 1234, "Port to listen to")
 
 func init() {
-	iniflags.AddConfigReadCallback(func() { restartServerOnPort(*listenPort) })
+	iniflags.OnFlagChange("listenPort", func(oldPort string) {
+		log.Printf("Migrating server from [%s] to [%d]\n", oldPort, *listenPort)
+		stopServerIfExists(oldPort)
+		startServerOnPort(*listenPort)
+	})
+}
+
+func main() {
+	// iniflags.Parse() starts the server on the -listenPort via OnFlagChange()
+	// callback registered above.
+	iniflags.Parse()
 }
 ```
