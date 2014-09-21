@@ -66,6 +66,7 @@ func Parse() {
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGHUP)
 
+	go sighupHandler()
 	go configUpdater()
 }
 
