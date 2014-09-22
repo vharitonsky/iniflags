@@ -67,7 +67,9 @@ func Parse() {
 
 func configUpdater() {
 	if *configUpdateInterval != 0 {
-		for _ = range time.Tick(*configUpdateInterval) {
+		for {
+			// Use time.Sleep() instead of time.Tick() for the sake of dynamic flag update.
+			time.Sleep(*configUpdateInterval)
 			updateConfig()
 		}
 	}
