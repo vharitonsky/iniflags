@@ -16,22 +16,22 @@ import (
 	"time"
 )
 
-type Arg struct {
-	Key      string
-	Value    string
-	FilePath string
-	LineNum  int
-}
-
 var (
 	config               = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path.")
 	configUpdateInterval = flag.Duration("configUpdateInterval", 0, "Update interval for re-reading config file set via -config flag. Zero disables config file re-reading.")
 	dumpflags            = flag.Bool("dumpflags", false, "Dumps values for all flags defined in the app into stdout in ini-compatible syntax and terminates the app.")
+)
 
+var (
 	flagChangeCallbacks = make(map[string][]FlagChangeCallback)
 	importStack         []string
 	parsed              bool
 )
+
+// flags' generation number.
+// It is modified on each flags' modification
+// via either -configUpdateInterval or SIGHUP.
+var Generation int
 
 // Use instead of flag.Parse().
 func Parse() {
@@ -55,6 +55,7 @@ func Parse() {
 	for flagName, _ := range flagChangeCallbacks {
 		verifyFlagChangeFlagName(flagName)
 	}
+	Generation++
 	issueAllFlagChangeCallbacks()
 
 	ch := make(chan os.Signal)
@@ -73,14 +74,13 @@ func configUpdater() {
 }
 
 func updateConfig() {
-	if oldFlagValues, ok := parseConfigFlags(); ok {
-		if len(oldFlagValues) > 0 {
-			modifiedFlags := make(map[string]string)
-			for k, _ := range oldFlagValues {
-				modifiedFlags[k] = flag.Lookup(k).Value.String()
-			}
-			log.Printf("iniflags: read updated config. Modified flags are: %v\n", modifiedFlags)
+	if oldFlagValues, ok := parseConfigFlags(); ok && len(oldFlagValues) > 0 {
+		modifiedFlags := make(map[string]string)
+		for k, _ := range oldFlagValues {
+			modifiedFlags[k] = flag.Lookup(k).Value.String()
 		}
+		log.Printf("iniflags: read updated config. Modified flags are: %v\n", modifiedFlags)
+		Generation++
 		issueFlagChangeCallbacks(oldFlagValues)
 	}
 }
@@ -194,7 +194,14 @@ func checkImportRecursion(configPath string) bool {
 	return true
 }
 
-func getArgsFromConfig(configPath string) (args []Arg, ok bool) {
+type flagArg struct {
+	Key      string
+	Value    string
+	FilePath string
+	LineNum  int
+}
+
+func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 	if !checkImportRecursion(configPath) {
 		return nil, false
 	}
@@ -250,7 +257,7 @@ func getArgsFromConfig(configPath string) (args []Arg, ok bool) {
 		if !ok {
 			return nil, false
 		}
-		args = append(args, Arg{Key: key, Value: value, FilePath: configPath, LineNum: lineNum})
+		args = append(args, flagArg{Key: key, Value: value, FilePath: configPath, LineNum: lineNum})
 	}
 
 	return args, true
