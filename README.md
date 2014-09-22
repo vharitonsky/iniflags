@@ -128,9 +128,7 @@ import (
 var listenPort = flag.Int("listenPort", 1234, "Port to listen to")
 
 func init() {
-	iniflags.OnFlagChange("listenPort", func(oldPort string) {
-		log.Printf("Migrating server from [%s] to [%d]\n", oldPort, *listenPort)
-		stopServerIfExists(oldPort)
+	iniflags.OnFlagChange("listenPort", func() {
 		startServerOnPort(*listenPort)
 	})
 }

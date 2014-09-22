@@ -23,12 +23,6 @@ type Arg struct {
 	LineNum  int
 }
 
-// Callback, which is called when the given flag is changed.
-// oldValue contains string representation of the previous flag value.
-//
-// The callback may be registered for any flag via OnFlagChange().
-type FlagChangeCallback func(oldValue string)
-
 var (
 	config               = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path.")
 	configUpdateInterval = flag.Duration("configUpdateInterval", 0, "Update interval for re-reading config file set via -config flag. Zero disables config file re-reading.")
@@ -91,6 +85,11 @@ func updateConfig() {
 	}
 }
 
+// Callback, which is called when the given flag is changed.
+//
+// The callback may be registered for any flag via OnFlagChange().
+type FlagChangeCallback func()
+
 // Registers the callback, which is called after the given flag value
 // is initialized and/or changed.
 // Flag values are initialized during iniflags.Parse() call.
@@ -112,10 +111,10 @@ func verifyFlagChangeFlagName(flagName string) {
 }
 
 func issueFlagChangeCallbacks(oldFlagValues map[string]string) {
-	for flagName, oldValue := range oldFlagValues {
+	for flagName := range oldFlagValues {
 		if fs, ok := flagChangeCallbacks[flagName]; ok {
 			for _, f := range fs {
-				f(oldValue)
+				f()
 			}
 		}
 	}
@@ -124,7 +123,7 @@ func issueFlagChangeCallbacks(oldFlagValues map[string]string) {
 func issueAllFlagChangeCallbacks() {
 	for _, fs := range flagChangeCallbacks {
 		for _, f := range fs {
-			f("")
+			f()
 		}
 	}
 }
