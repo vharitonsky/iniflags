@@ -167,10 +167,13 @@ func parseConfigFlags() (oldFlagValues map[string]string, ok bool) {
 			if oldValue == arg.Value {
 				continue
 			}
-			oldFlagValues[arg.Key] = oldValue
 			if err := f.Value.Set(arg.Value); err != nil {
 				log.Printf("iniflags: error when parsing flag [%s] value [%s] at line [%d] of file [%s]: [%s]\n", arg.Key, arg.Value, arg.LineNum, arg.FilePath, err)
 				ok = false
+				continue
+			}
+			if oldValue != f.Value.String() {
+				oldFlagValues[arg.Key] = oldValue
 			}
 		}
 	}
