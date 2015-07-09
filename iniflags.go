@@ -373,3 +373,7 @@ func removeTrailingComments(v string) string {
 	v = strings.Split(v, ";")[0]
 	return strings.TrimSpace(v)
 }
+
+func SetConfigFile(path string) {
+	config = *path
+}
