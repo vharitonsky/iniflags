@@ -28,16 +28,21 @@ var (
 	parsed              bool
 )
 
-// flags' generation number.
+// Generation is flags' generation number.
+//
 // It is modified on each flags' modification
 // via either -configUpdateInterval or SIGHUP.
 var Generation int
 
-// Use instead of flag.Parse().
+// Parse() obtains flag values from config file set via -config.
+//
+// It obtains flag values from command line like flag.Parse(), then overrides
+// them by values parsed from config file set via -config.
+//
+// Path to config file can also be set via SetConfigFile() before Parse() call.
 func Parse() {
 	if parsed {
-		log.Printf("iniflags: duplicate call to iniflags.Parse() detected\n")
-		return
+		panic("iniflags: duplicate call to iniflags.Parse() detected")
 	}
 
 	parsed = true
@@ -87,13 +92,14 @@ func updateConfig() {
 	}
 }
 
-// Callback, which is called when the given flag is changed.
+// FlagChangeCallback is called when the given flag is changed.
 //
 // The callback may be registered for any flag via OnFlagChange().
 type FlagChangeCallback func()
 
-// Registers the callback, which is called after the given flag value
-// is initialized and/or changed.
+// OnFlagChange registers the callback, which is called after the given flag
+// value is initialized and/or changed.
+//
 // Flag values are initialized during iniflags.Parse() call.
 // Flag value can be changed on config re-read after obtaining SIGHUP signal
 // or if periodic config re-read is enabled with -configUpdateInterval flag.
@@ -372,4 +378,15 @@ func removeTrailingComments(v string) string {
 	v = strings.Split(v, "#")[0]
 	v = strings.Split(v, ";")[0]
 	return strings.TrimSpace(v)
+}
+
+// SetConfigFile sets path to config file.
+//
+// Call this function before Parse() if you need default path to config file
+// when -config command-line flag is not set.
+func SetConfigFile(path string) {
+	if parsed {
+		panic("iniflags: SetConfigFile() must be called before Parse()")
+	}
+	*config = path
 }
