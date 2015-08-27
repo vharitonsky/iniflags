@@ -41,7 +41,7 @@ func TestGetArgsFromConfig(t *testing.T) {
 	if !ok {
 		t.Fail()
 	}
-	checked_var0, checked_var1, checked_var2 := false, false, false
+	var checked_var0, checked_var1, checked_var2, checked_var3 bool
 	for _, arg := range args {
 		t.Log(arg.Key, arg.Value)
 		if arg.Key == "var0" {
@@ -65,9 +65,16 @@ func TestGetArgsFromConfig(t *testing.T) {
 				checked_var2 = true
 			}
 		}
+		if arg.Key == "var3" {
+			if arg.Value != "" {
+				t.Fatalf("Val of 'var3' should be '', got '%s'", arg.Value)
+			} else {
+				checked_var3 = true
+			}
+		}
 	}
-	if !checked_var0 || !checked_var1 || !checked_var2 {
-		t.Fatalf("Not all vals checked: args=[%v], %v, %v, %v", args, checked_var0, checked_var1, checked_var2)
+	if !checked_var0 || !checked_var1 || !checked_var2 || !checked_var3 {
+		t.Fatalf("Not all vals checked: args=[%v], %v, %v, %v, %v", args, checked_var0, checked_var1, checked_var2, checked_var3)
 	}
 }
 

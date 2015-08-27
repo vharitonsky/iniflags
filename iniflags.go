@@ -360,6 +360,9 @@ func quoteValue(v string) string {
 
 func unquoteValue(v string, lineNum int, configPath string) (string, bool) {
 	v = strings.TrimSpace(v)
+	if len(v) == 0 {
+		return "", true
+	}
 	if v[0] != '"' {
 		return removeTrailingComments(v), true
 	}
