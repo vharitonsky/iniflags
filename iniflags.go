@@ -257,7 +257,7 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 		}
 
 		/* ignore utf-8 BOM */
-		if len(line) > 3 && line[0] == '\xef' {
+		if len(line) >= 3 && line[0] == '\xef' {
 			line = line[3:]
 		}
 
