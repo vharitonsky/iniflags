@@ -255,6 +255,12 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 			args = append(args, importArgs...)
 			continue
 		}
+
+        /* ignore utf-8 BOM */
+        if len(line) > 3 && line[0] == '\xef' {
+            line = line[3:]
+        }
+
 		if line == "" || line[0] == ';' || line[0] == '#' || line[0] == '[' {
 			continue
 		}
