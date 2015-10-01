@@ -19,6 +19,22 @@ func TestRemoveTrailingComments(t *testing.T) {
 
 }
 
+func TestBOM(t *testing.T) {
+	args, ok := getArgsFromConfig("test_bom.ini")
+	if !ok {
+		t.Fail()
+	}
+	if len(args) != 1 {
+		t.Fatalf("Unexpected number of args parsed: %d. Expected 1", len(args))
+	}
+	if args[0].Key != "bom" {
+		t.Fatalf("Unexpected key name parsed: %q. Expected \"bom\"", args[0].Key)
+	}
+	if args[0].Value != "привет" {
+		t.Fatalf("Unexpected value parsed: %q. Expected \"привет\"", args[0].Value)
+	}
+}
+
 func TestUnquoteValue(t *testing.T) {
 	val := "\"val#;\\\"\\n\"    # test\n"
 	fixed_val, ok := unquoteValue(val, 0, "")

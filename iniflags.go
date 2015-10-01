@@ -212,6 +212,17 @@ type flagArg struct {
 	LineNum  int
 }
 
+func stripBOM(s string) string {
+	if len(s) < 3 {
+		return s
+	}
+	bom := s[:3]
+	if bom == "\ufeff" || bom == "\ufffe" {
+		return s[3:]
+	}
+	return s
+}
+
 func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 	if !checkImportRecursion(configPath) {
 		return nil, false
@@ -238,6 +249,9 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 			}
 			log.Printf("iniflags: error when reading file [%s] at line %d: [%s]\n", configPath, lineNum, err)
 			return nil, false
+		}
+		if lineNum == 1 {
+			line = stripBOM(line)
 		}
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "#import ") {
