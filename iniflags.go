@@ -34,7 +34,7 @@ var (
 // via either -configUpdateInterval or SIGHUP.
 var Generation int
 
-// Parse() obtains flag values from config file set via -config.
+// Parse obtains flag values from config file set via -config.
 //
 // It obtains flag values from command line like flag.Parse(), then overrides
 // them by values parsed from config file set via -config.
@@ -57,7 +57,7 @@ func Parse() {
 		os.Exit(0)
 	}
 
-	for flagName, _ := range flagChangeCallbacks {
+	for flagName := range flagChangeCallbacks {
 		verifyFlagChangeFlagName(flagName)
 	}
 	Generation++
@@ -83,7 +83,7 @@ func configUpdater() {
 func updateConfig() {
 	if oldFlagValues, ok := parseConfigFlags(); ok && len(oldFlagValues) > 0 {
 		modifiedFlags := make(map[string]string)
-		for k, _ := range oldFlagValues {
+		for k := range oldFlagValues {
 			modifiedFlags[k] = flag.Lookup(k).Value.String()
 		}
 		log.Printf("iniflags: read updated config. Modified flags are: %v\n", modifiedFlags)
@@ -137,7 +137,7 @@ func issueAllFlagChangeCallbacks() {
 }
 
 func sighupHandler(ch <-chan os.Signal) {
-	for _ = range ch {
+	for range ch {
 		updateConfig()
 	}
 }
@@ -289,7 +289,7 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 }
 
 func openConfigFile(path string) io.ReadCloser {
-	if isHttp(path) {
+	if isHTTP(path) {
 		resp, err := http.Get(path)
 		if err != nil {
 			log.Printf("iniflags: cannot load config file at [%s]: [%s]\n", path, err)
@@ -311,7 +311,7 @@ func openConfigFile(path string) io.ReadCloser {
 }
 
 func combinePath(basePath, relPath string) (string, bool) {
-	if isHttp(basePath) {
+	if isHTTP(basePath) {
 		base, err := url.Parse(basePath)
 		if err != nil {
 			log.Printf("iniflags: error when parsing http base path [%s]: %s\n", basePath, err)
@@ -325,13 +325,13 @@ func combinePath(basePath, relPath string) (string, bool) {
 		return base.ResolveReference(rel).String(), true
 	}
 
-	if relPath == "" || relPath[0] == '/' || isHttp(relPath) {
+	if relPath == "" || relPath[0] == '/' || isHTTP(relPath) {
 		return relPath, true
 	}
 	return path.Join(path.Dir(basePath), relPath), true
 }
 
-func isHttp(path string) bool {
+func isHTTP(path string) bool {
 	return strings.HasPrefix(strings.ToLower(path), "http://") || strings.HasPrefix(strings.ToLower(path), "https://")
 }
 
