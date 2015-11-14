@@ -137,7 +137,7 @@ func issueAllFlagChangeCallbacks() {
 }
 
 func sighupHandler(ch <-chan os.Signal) {
-	for range ch {
+	for _ = range ch {
 		updateConfig()
 	}
 }
