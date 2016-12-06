@@ -410,3 +410,17 @@ func SetConfigFile(path string) {
 	}
 	*config = path
 }
+
+func SetAllowUnknownFlags(allowed bool) {
+	if parsed {
+		panic("iniflags: SetAllowUnknownFlags() must be called before Parse()")
+	}
+	*allowUnknownFlags = allowed
+}
+
+func SetConfigUpdateInterval(interval time.Duration) { 
+	if parsed {
+		panic("iniflags: SetConfigUpdateInterval() must be called before Parse()")
+	}
+	*configUpdateInterval = interval
+}
