@@ -3,6 +3,7 @@ package iniflags
 import (
 	"flag"
 	"testing"
+	"time"
 )
 
 func TestRemoveTrailingComments(t *testing.T) {
@@ -111,5 +112,23 @@ func TestSetConfigFile(t *testing.T) {
 	Parse()
 	if *x != "foobar" {
 		t.Fatalf("Unexpected x=[%s]. Expected [foobar]", *x)
+	}
+}
+
+func TestSetAllowUnknownFlags(t *testing.T) {
+	parsed = false
+	*allowUnknownFlags = false
+	SetAllowUnknownFlags(true)
+	if *allowUnknownFlags != true {
+		t.Fatal("SetAllowUnknownFlags failed to update global.")
+	}
+}
+
+func TestSetConfigUpdateInterval(t *testing.T) {
+	parsed = false
+	*configUpdateInterval = time.Second
+	SetConfigUpdateInterval(time.Minute)
+	if *configUpdateInterval != time.Minute {
+		t.Fatal("SetConfigUpdateInterval failed to update global.")
 	}
 }
