@@ -70,7 +70,7 @@ flag2 = value2
 
 dev.ini
 ```ini
-#import "base.ini"
+# import "base.ini"
 # Now flag1="value1", flag2="value2"
 
 flag2 = foobar
@@ -87,7 +87,7 @@ or https links:
 config.ini
 ```ini
 # The following line will import configs from the given http link.
-#import "http://google.com/path/to/config.ini"
+# import "http://google.com/path/to/config.ini"
 ```
 
 All flags defined in the app can be dumped into stdout with ini-compatible sytax
