@@ -41,6 +41,12 @@ dev.ini
     ...
     [section]
     flagN = 4  # comment3
+
+    multilineFlag{,} = line1
+    multilineFlag{,} = line2
+    multilineFlag{|} = line3
+    multilineFlag{} = line4
+    # Now the multilineFlag equals to "line1,line2|line3line4"
 ```
 
 ```bash

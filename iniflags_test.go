@@ -17,7 +17,6 @@ func TestRemoveTrailingComments(t *testing.T) {
 	if clean != "v = v" {
 		t.Fatalf("Supposed to get 'v = v ', got '%s'", clean)
 	}
-
 }
 
 func TestBOM(t *testing.T) {
@@ -58,40 +57,40 @@ func TestGetArgsFromConfig(t *testing.T) {
 	if !ok {
 		t.Fail()
 	}
-	var checkedVar0, checkedVar1, checkedVar2, checkedVar3 bool
+	var checkedVar0, checkedVar1, checkedVar2, checkedVar3, checkedVar4 bool
 	for _, arg := range args {
 		t.Log(arg.Key, arg.Value)
-		if arg.Key == "var0" {
+		switch arg.Key {
+		case "var0":
 			if arg.Value != "val0" {
-				t.Fatalf("Val of 'var0' should be 'val0', got '%s'", arg.Value)
-			} else {
-				checkedVar0 = true
+				t.Fatalf("Val of 'var0' should be 'val0', got %q", arg.Value)
 			}
-		}
-		if arg.Key == "var1" {
+			checkedVar0 = true
+		case "var1":
 			if arg.Value != "val#1\n\\\"\nx" {
-				t.Fatalf("Invalid val for var1='%s'", arg.Value)
-			} else {
-				checkedVar1 = true
+				t.Fatalf("Invalid val for var1=%q", arg.Value)
 			}
-		}
-		if arg.Key == "var2" {
+			checkedVar1 = true
+		case "var2":
 			if arg.Value != "1234" {
-				t.Fatalf("Val of 'var2' should be '1234', got '%s'", arg.Value)
-			} else {
-				checkedVar2 = true
+				t.Fatalf("Val of 'var2' should be '1234', got %q", arg.Value)
 			}
-		}
-		if arg.Key == "var3" {
+			checkedVar2 = true
+		case "var3":
 			if arg.Value != "" {
-				t.Fatalf("Val of 'var3' should be '', got '%s'", arg.Value)
-			} else {
-				checkedVar3 = true
+				t.Fatalf("Val of 'var3' should be '', got %q", arg.Value)
 			}
+			checkedVar3 = true
+		case "var4":
+			if arg.Value != "multi,var|12345" {
+				t.Fatalf("Val of 'var4' should be 'multi,var,12345', got %q", arg.Value)
+			}
+			checkedVar4 = true
 		}
 	}
-	if !checkedVar0 || !checkedVar1 || !checkedVar2 || !checkedVar3 {
-		t.Fatalf("Not all vals checked: args=[%v], %v, %v, %v, %v", args, checkedVar0, checkedVar1, checkedVar2, checkedVar3)
+	if !checkedVar0 || !checkedVar1 || !checkedVar2 || !checkedVar3 || !checkedVar4 {
+		t.Fatalf("Not all vals checked: args=[%v], %v, %v, %v, %v, %v",
+			args, checkedVar0, checkedVar1, checkedVar2, checkedVar3, checkedVar4)
 	}
 }
 

@@ -243,11 +243,16 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 	r := bufio.NewReader(file)
 
 	var lineNum int
+	var multilineFA flagArg
 	for {
 		lineNum++
 		line, err := r.ReadString('\n')
 		if err != nil && line == "" {
 			if err == io.EOF {
+				if len(multilineFA.Key) > 0 {
+					// flush the last multiline arg
+					args = append(args, multilineFA)
+				}
 				break
 			}
 			log.Printf("iniflags: error when reading file [%s] at line %d: [%s]\n", configPath, lineNum, err)
@@ -285,7 +290,47 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 		if !ok {
 			return nil, false
 		}
-		args = append(args, flagArg{Key: key, Value: value, FilePath: configPath, LineNum: lineNum})
+
+		fa := flagArg{
+			Key:      key,
+			Value:    value,
+			FilePath: configPath,
+			LineNum:  lineNum,
+		}
+
+		if !strings.HasSuffix(key, "}") {
+			if len(multilineFA.Key) > 0 {
+				// flush the last multiline arg
+				args = append(args, multilineFA)
+				multilineFA = flagArg{}
+			}
+
+			args = append(args, fa)
+			continue
+		}
+
+		// multiline arg
+		n := strings.LastIndex(key, "{")
+		if n < 0 {
+			log.Printf("iniflags: cannot find '{' in the multiline key [%s] at line %d, file [%s]", key, lineNum, configPath)
+			return nil, false
+		}
+		switch multilineFA.Key {
+		case "":
+			// the first line for multiline arg
+			multilineFA = fa
+			multilineFA.Key = key[:n]
+		case key[:n]:
+			// the subsequent line for multiline arg
+			delimiter := key[n+1 : len(key)-1]
+			multilineFA.Value += delimiter
+			multilineFA.Value += value
+		default:
+			// new multiline arg
+			args = append(args, multilineFA)
+			multilineFA = fa
+			multilineFA.Key = key[:n]
+		}
 	}
 
 	return args, true
@@ -418,7 +463,7 @@ func SetAllowUnknownFlags(allowed bool) {
 	*allowUnknownFlags = allowed
 }
 
-func SetConfigUpdateInterval(interval time.Duration) { 
+func SetConfigUpdateInterval(interval time.Duration) {
 	if parsed {
 		panic("iniflags: SetConfigUpdateInterval() must be called before Parse()")
 	}
