@@ -18,6 +18,7 @@ import (
 
 var (
 	allowUnknownFlags    = flag.Bool("allowUnknownFlags", false, "Don't terminate the app if ini file contains unknown flags.")
+	allowMissingConfig   = flag.Bool("allowMissingConfig", false, "Don't terminate the app if the ini file cannot be read.")
 	config               = flag.String("config", "", "Path to ini config for using in go flags. May be relative to the current executable path.")
 	configUpdateInterval = flag.Duration("configUpdateInterval", 0, "Update interval for re-reading config file set via -config flag. Zero disables config file re-reading.")
 	dumpflags            = flag.Bool("dumpflags", false, "Dumps values for all flags defined in the app into stdout in ini-compatible syntax and terminates the app.")
@@ -235,9 +236,9 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 		importStack = importStack[:len(importStack)-1]
 	}()
 
-	file := openConfigFile(configPath)
-	if file == nil {
-		return nil, false
+	file, err := openConfigFile(configPath)
+	if err != nil {
+		return nil, *allowMissingConfig
 	}
 	defer file.Close()
 	r := bufio.NewReader(file)
@@ -336,26 +337,26 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 	return args, true
 }
 
-func openConfigFile(path string) io.ReadCloser {
+func openConfigFile(path string) (io.ReadCloser, error) {
 	if isHTTP(path) {
 		resp, err := http.Get(path)
 		if err != nil {
 			log.Printf("iniflags: cannot load config file at [%s]: [%s]\n", path, err)
-			return nil
+			return nil, err
 		}
 		if resp.StatusCode != http.StatusOK {
 			log.Printf("iniflags: unexpected http status code when obtaining config file [%s]: %d. Expected %d\n", path, resp.StatusCode, http.StatusOK)
-			return nil
+			return nil, err
 		}
-		return resp.Body
+		return resp.Body, nil
 	}
 
 	file, err := os.Open(path)
 	if err != nil {
 		log.Printf("iniflags: cannot open config file at [%s]: [%s]\n", path, err)
-		return nil
+		return nil, err
 	}
-	return file
+	return file, nil
 }
 
 func combinePath(basePath, relPath string) (string, bool) {
@@ -454,6 +455,13 @@ func SetConfigFile(path string) {
 		panic("iniflags: SetConfigFile() must be called before Parse()")
 	}
 	*config = path
+}
+
+func SetAllowMissingConfigFile(allowed bool) {
+	if parsed {
+		panic("iniflags: SetAllowUnknownFlags() must be called before Parse()")
+	}
+	*allowMissingConfig = allowed
 }
 
 func SetAllowUnknownFlags(allowed bool) {
