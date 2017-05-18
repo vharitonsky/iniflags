@@ -44,7 +44,7 @@ var Generation int
 // Path to config file can also be set via SetConfigFile() before Parse() call.
 func Parse() {
 	if parsed {
-		panic("iniflags: duplicate call to iniflags.Parse() detected")
+		logger.Panicf("iniflags: duplicate call to iniflags.Parse() detected")
 	}
 
 	parsed = true
@@ -88,7 +88,7 @@ func updateConfig() {
 		for k := range oldFlagValues {
 			modifiedFlags[k] = flag.Lookup(k).Value.String()
 		}
-		log.Printf("iniflags: read updated config. Modified flags are: %v\n", modifiedFlags)
+		logger.Printf("iniflags: read updated config. Modified flags are: %v", modifiedFlags)
 		Generation++
 		issueFlagChangeCallbacks(oldFlagValues)
 	}
@@ -116,7 +116,7 @@ func OnFlagChange(flagName string, callback FlagChangeCallback) {
 
 func verifyFlagChangeFlagName(flagName string) {
 	if flag.Lookup(flagName) == nil {
-		log.Fatalf("iniflags: cannot register FlagChangeCallback for non-existing flag [%s]\n", flagName)
+		logger.Fatalf("iniflags: cannot register FlagChangeCallback for non-existing flag [%s]", flagName)
 	}
 }
 
@@ -165,7 +165,7 @@ func parseConfigFlags() (oldFlagValues map[string]string, ok bool) {
 	for _, arg := range parsedArgs {
 		f := flag.Lookup(arg.Key)
 		if f == nil {
-			log.Printf("iniflags: unknown flag name=[%s] found at line [%d] of file [%s]\n", arg.Key, arg.LineNum, arg.FilePath)
+			logger.Printf("iniflags: unknown flag name=[%s] found at line [%d] of file [%s]", arg.Key, arg.LineNum, arg.FilePath)
 			if !*allowUnknownFlags {
 				ok = false
 			}
@@ -178,7 +178,7 @@ func parseConfigFlags() (oldFlagValues map[string]string, ok bool) {
 				continue
 			}
 			if err := f.Value.Set(arg.Value); err != nil {
-				log.Printf("iniflags: error when parsing flag [%s] value [%s] at line [%d] of file [%s]: [%s]\n", arg.Key, arg.Value, arg.LineNum, arg.FilePath, err)
+				logger.Printf("iniflags: error when parsing flag [%s] value [%s] at line [%d] of file [%s]: [%s]", arg.Key, arg.Value, arg.LineNum, arg.FilePath, err)
 				ok = false
 				continue
 			}
@@ -202,7 +202,7 @@ func parseConfigFlags() (oldFlagValues map[string]string, ok bool) {
 func checkImportRecursion(configPath string) bool {
 	for _, path := range importStack {
 		if path == configPath {
-			log.Printf("iniflags: import recursion found for [%s]: %v\n", configPath, importStack)
+			logger.Printf("iniflags: import recursion found for [%s]: %v", configPath, importStack)
 			return false
 		}
 	}
@@ -256,7 +256,7 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 				}
 				break
 			}
-			log.Printf("iniflags: error when reading file [%s] at line %d: [%s]\n", configPath, lineNum, err)
+			logger.Printf("iniflags: error when reading file [%s] at line %d: [%s]", configPath, lineNum, err)
 			return nil, false
 		}
 		if lineNum == 1 {
@@ -283,7 +283,7 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 		}
 		parts := strings.SplitN(line, "=", 2)
 		if len(parts) != 2 {
-			log.Printf("iniflags: cannot split [%s] at line %d into key and value in config file [%s]\n", line, lineNum, configPath)
+			logger.Printf("iniflags: cannot split [%s] at line %d into key and value in config file [%s]", line, lineNum, configPath)
 			return nil, false
 		}
 		key := strings.TrimSpace(parts[0])
@@ -341,11 +341,11 @@ func openConfigFile(path string) (io.ReadCloser, error) {
 	if isHTTP(path) {
 		resp, err := http.Get(path)
 		if err != nil {
-			log.Printf("iniflags: cannot load config file at [%s]: [%s]\n", path, err)
+			logger.Printf("iniflags: cannot load config file at [%s]: [%s]\n", path, err)
 			return nil, err
 		}
 		if resp.StatusCode != http.StatusOK {
-			log.Printf("iniflags: unexpected http status code when obtaining config file [%s]: %d. Expected %d\n", path, resp.StatusCode, http.StatusOK)
+			logger.Printf("iniflags: unexpected http status code when obtaining config file [%s]: %d. Expected %d", path, resp.StatusCode, http.StatusOK)
 			return nil, err
 		}
 		return resp.Body, nil
@@ -354,7 +354,7 @@ func openConfigFile(path string) (io.ReadCloser, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if !(*allowMissingConfig) {
-			log.Printf("iniflags: cannot open config file at [%s]: [%s]\n", path, err)
+			logger.Printf("iniflags: cannot open config file at [%s]: [%s]", path, err)
 		}
 		return nil, err
 	}
@@ -365,12 +365,12 @@ func combinePath(basePath, relPath string) (string, bool) {
 	if isHTTP(basePath) {
 		base, err := url.Parse(basePath)
 		if err != nil {
-			log.Printf("iniflags: error when parsing http base path [%s]: %s\n", basePath, err)
+			logger.Printf("iniflags: error when parsing http base path [%s]: %s", basePath, err)
 			return "", false
 		}
 		rel, err := url.Parse(relPath)
 		if err != nil {
-			log.Printf("iniflags: error when parsing http rel path [%s] for base [%s]: %s\n", relPath, basePath, err)
+			logger.Printf("iniflags: error when parsing http rel path [%s] for base [%s]: %s", relPath, basePath, err)
 			return "", false
 		}
 		return base.ResolveReference(rel).String(), true
@@ -433,7 +433,7 @@ func unquoteValue(v string, lineNum int, configPath string) (string, bool) {
 	}
 	n := strings.LastIndex(v, "\"")
 	if n == -1 {
-		log.Printf("iniflags: unclosed string found [%s] at line %d in config file [%s]\n", v, lineNum, configPath)
+		logger.Printf("iniflags: unclosed string found [%s] at line %d in config file [%s]", v, lineNum, configPath)
 		return "", false
 	}
 	v = v[1:n]
@@ -454,7 +454,7 @@ func removeTrailingComments(v string) string {
 // when -config command-line flag is not set.
 func SetConfigFile(path string) {
 	if parsed {
-		panic("iniflags: SetConfigFile() must be called before Parse()")
+		logger.Panicf("iniflags: SetConfigFile() must be called before Parse()")
 	}
 	*config = path
 }
@@ -468,14 +468,30 @@ func SetAllowMissingConfigFile(allowed bool) {
 
 func SetAllowUnknownFlags(allowed bool) {
 	if parsed {
-		panic("iniflags: SetAllowUnknownFlags() must be called before Parse()")
+		logger.Panicf("iniflags: SetAllowUnknownFlags() must be called before Parse()")
 	}
 	*allowUnknownFlags = allowed
 }
 
 func SetConfigUpdateInterval(interval time.Duration) {
 	if parsed {
-		panic("iniflags: SetConfigUpdateInterval() must be called before Parse()")
+		logger.Panicf("iniflags: SetConfigUpdateInterval() must be called before Parse()")
 	}
 	*configUpdateInterval = interval
+}
+
+// Logger is a slimmed-down version of the log.Logger interface, which only includes the methods we use.
+// This interface is accepted by SetLogger() to redirect log output to another destination.
+type Logger interface {
+	Printf(format string, v ...interface{})
+	Fatalf(format string, v ...interface{})
+	Panicf(format string, v ...interface{})
+}
+
+// logger is the global Logger used to output log messages.  By default, it outputs to the same place and with the same
+// format as the standard libary log package calls.  It can be changed via SetLogger().
+var logger Logger = log.New(os.Stderr, "", log.LstdFlags)
+
+func SetLogger(l Logger) {
+	logger = l
 }
