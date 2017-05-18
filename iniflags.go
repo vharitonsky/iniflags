@@ -353,7 +353,9 @@ func openConfigFile(path string) (io.ReadCloser, error) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		log.Printf("iniflags: cannot open config file at [%s]: [%s]\n", path, err)
+		if !(*allowMissingConfig) {
+			log.Printf("iniflags: cannot open config file at [%s]: [%s]\n", path, err)
+		}
 		return nil, err
 	}
 	return file, nil
