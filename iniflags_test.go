@@ -114,6 +114,15 @@ func TestSetConfigFile(t *testing.T) {
 	}
 }
 
+func TestSetAllowMissingConfigFile(t *testing.T) {
+	parsed = false
+	*allowMissingConfig = false
+	SetAllowMissingConfigFile(true)
+	if *allowMissingConfig != true {
+		t.Fatal("SetAllowUnknownFlags failed to update global.")
+	}
+}
+
 func TestSetAllowUnknownFlags(t *testing.T) {
 	parsed = false
 	*allowUnknownFlags = false
