@@ -2,6 +2,7 @@ package iniflags
 
 import (
 	"flag"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -16,6 +17,19 @@ func TestRemoveTrailingComments(t *testing.T) {
 	clean = removeTrailingComments(colonCommented)
 	if clean != "v = v" {
 		t.Fatalf("Supposed to get 'v = v ', got '%s'", clean)
+	}
+}
+
+func TestGetTrailingComments(t *testing.T) {
+	hashCommented := "v = v # test_comment"
+	comment := getTrailingComment(hashCommented)
+	if comment != " test_comment" {
+		t.Fatalf("Supposed to get ' test_comment', got '%s'", comment)
+	}
+	colonCommented := "v = v ; test_comment"
+	comment = getTrailingComment(colonCommented)
+	if comment != " test_comment" {
+		t.Fatalf("Supposed to get ' test_comment', got '%s'", comment)
 	}
 }
 
@@ -37,9 +51,13 @@ func TestBOM(t *testing.T) {
 
 func TestUnquoteValue(t *testing.T) {
 	val := "\"val#;\\\"\\n\"    # test\n"
-	fixedVal, ok := unquoteValue(val, 0, "")
+	fixedVal, comment, ok := unquoteValue(val, 0, "")
 	if !ok || fixedVal != "val#;\"\n" {
 		t.Fatalf("Value should be unquoted and stripped, got '%s'", fixedVal)
+	}
+	expected := " test\n"
+	if comment != expected {
+		t.Fatalf("Supposed to get '%q', got '%q'", expected, comment)
 	}
 }
 
@@ -57,33 +75,51 @@ func TestGetArgsFromConfig(t *testing.T) {
 	if !ok {
 		t.Fail()
 	}
+	var expected string
 	var checkedVar0, checkedVar1, checkedVar2, checkedVar3, checkedVar4 bool
 	for _, arg := range args {
-		t.Log(arg.Key, arg.Value)
+		t.Log(arg.Key, fmt.Sprintf("%q", arg.Value))
 		switch arg.Key {
 		case "var0":
-			if arg.Value != "val0" {
-				t.Fatalf("Val of 'var0' should be 'val0', got %q", arg.Value)
+			expected = "val0"
+			if arg.Value != expected {
+				t.Fatalf("Val of 'var0' should be '%q', got %q", expected, arg.Value)
+			}
+			expected = " comment"
+			if arg.Comment != expected {
+				t.Fatalf("Comment of 'var0' should be ' comment', got %q", expected, arg.Comment)
 			}
 			checkedVar0 = true
 		case "var1":
-			if arg.Value != "val#1\n\\\"\nx" {
-				t.Fatalf("Invalid val for var1=%q", arg.Value)
+			expected = "val#1\n\\\"\nx"
+			if arg.Value != expected {
+				t.Fatalf("Invalid val for var1 should be '%q', got '%q'", expected, arg.Value)
+			}
+			expected = " this is a test comment"
+			if arg.Comment != expected {
+				t.Fatalf("Comment of 'var1' should be '%q', got %q", expected, arg.Comment)
 			}
 			checkedVar1 = true
 		case "var2":
-			if arg.Value != "1234" {
-				t.Fatalf("Val of 'var2' should be '1234', got %q", arg.Value)
+			expected = "1234"
+			if arg.Value != expected {
+				t.Fatalf("Val of 'var2' should be '%q', got %q", expected, arg.Value)
 			}
 			checkedVar2 = true
 		case "var3":
-			if arg.Value != "" {
-				t.Fatalf("Val of 'var3' should be '', got %q", arg.Value)
+			expected = ""
+			if arg.Value != expected {
+				t.Fatalf("Val of 'var3' should be '%q', got %q", expected, arg.Value)
+			}
+			expected = " empty value"
+			if arg.Comment != expected {
+				t.Fatalf("Comment of 'var3' should be '%q', got %q", expected, arg.Comment)
 			}
 			checkedVar3 = true
 		case "var4":
-			if arg.Value != "multi,var|12345" {
-				t.Fatalf("Val of 'var4' should be 'multi,var,12345', got %q", arg.Value)
+			expected = "multi,var|12345"
+			if arg.Value != expected {
+				t.Fatalf("Val of 'var4' should be '%q', got %q", expected, arg.Value)
 			}
 			checkedVar4 = true
 		}
