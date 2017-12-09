@@ -214,6 +214,7 @@ type flagArg struct {
 	Value    string
 	FilePath string
 	LineNum  int
+	Comment  string
 }
 
 func stripBOM(s string) string {
@@ -225,6 +226,10 @@ func stripBOM(s string) string {
 		return s[3:]
 	}
 	return s
+}
+
+func ReadIniFile(iniFilePath string) (args []flagArg, ok bool) {
+	return getArgsFromConfig(iniFilePath)
 }
 
 func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
@@ -244,6 +249,7 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 	r := bufio.NewReader(file)
 
 	var lineNum int
+	var comment = ""
 	var multilineFA flagArg
 	for {
 		lineNum++
@@ -264,7 +270,7 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 		}
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "#import ") {
-			importPath, ok := unquoteValue(line[7:], lineNum, configPath)
+			importPath, _, ok := unquoteValue(line[7:], lineNum, configPath)
 			if !ok {
 				return nil, false
 			}
@@ -278,7 +284,13 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 			args = append(args, importArgs...)
 			continue
 		}
-		if line == "" || line[0] == ';' || line[0] == '#' || line[0] == '[' {
+		if line == "" || line[0] == '[' {
+			comment = ""
+			continue
+		}
+		if line[0] == '#' || line[0] == ';' {
+			//save the comment and move to the next line
+			comment = line[1:]
 			continue
 		}
 		parts := strings.SplitN(line, "=", 2)
@@ -287,9 +299,13 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 			return nil, false
 		}
 		key := strings.TrimSpace(parts[0])
-		value, ok := unquoteValue(parts[1], lineNum, configPath)
+
+		value, cmt, ok := unquoteValue(parts[1], lineNum, configPath)
 		if !ok {
 			return nil, false
+		}
+		if comment == "" {
+			comment = cmt
 		}
 
 		fa := flagArg{
@@ -297,8 +313,10 @@ func getArgsFromConfig(configPath string) (args []flagArg, ok bool) {
 			Value:    value,
 			FilePath: configPath,
 			LineNum:  lineNum,
+			Comment:  comment,
 		}
 
+		comment = ""
 		if !strings.HasSuffix(key, "}") {
 			if len(multilineFA.Key) > 0 {
 				// flush the last multiline arg
@@ -423,29 +441,52 @@ func quoteValue(v string) string {
 	return fmt.Sprintf("\"%s\"", v)
 }
 
-func unquoteValue(v string, lineNum int, configPath string) (string, bool) {
-	v = strings.TrimSpace(v)
+func unquoteValue(val string, lineNum int, configPath string) (string, string, bool) {
+	v := strings.TrimSpace(val)
 	if len(v) == 0 {
-		return "", true
+		return "", "", true
 	}
 	if v[0] != '"' {
-		return removeTrailingComments(v), true
+		return removeTrailingComments(v), getTrailingComment(v), true
 	}
 	n := strings.LastIndex(v, "\"")
 	if n == -1 {
 		logger.Printf("iniflags: unclosed string found [%s] at line %d in config file [%s]", v, lineNum, configPath)
-		return "", false
+		return "", "", false
 	}
 	v = v[1:n]
 	v = strings.Replace(v, "\\\"", "\"", -1)
 	v = strings.Replace(v, "\\n", "\n", -1)
-	return strings.Replace(v, "\\\\", "\\", -1), true
+	v = strings.Replace(v, "\\\\", "\\", -1)
+
+	//to get the comment remove the value from the original value and get the trailing comment
+	comment := getTrailingComment(strings.Replace(val, fmt.Sprintf("%q", v), "", 1))
+
+	return v, comment, true
 }
 
 func removeTrailingComments(v string) string {
 	v = strings.Split(v, "#")[0]
 	v = strings.Split(v, ";")[0]
 	return strings.TrimSpace(v)
+}
+
+func getTrailingComment(v string) string {
+	if len(v) == 0 {
+		return ""
+	}
+	if v[0] == '"' {
+		return ""
+	}
+	s := strings.Split(v, "#")
+	if len(s) > 1 {
+		return s[1]
+	}
+	s = strings.Split(v, ";")
+	if len(s) > 1 {
+		return s[1]
+	}
+	return ""
 }
 
 // SetConfigFile sets path to config file.
