@@ -502,7 +502,7 @@ func SetConfigFile(path string) {
 
 func SetAllowMissingConfigFile(allowed bool) {
 	if parsed {
-		panic("iniflags: SetAllowUnknownFlags() must be called before Parse()")
+		panic("iniflags: SetAllowMissingConfigFile() must be called before Parse()")
 	}
 	*allowMissingConfig = allowed
 }
