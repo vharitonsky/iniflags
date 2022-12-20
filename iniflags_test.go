@@ -87,7 +87,7 @@ func TestGetArgsFromConfig(t *testing.T) {
 			}
 			expected = " comment"
 			if arg.Comment != expected {
-				t.Fatalf("Comment of 'var0' should be ' comment', got %q", expected, arg.Comment)
+				t.Fatalf("Comment of 'var0' should be '%q', got %q", expected, arg.Comment)
 			}
 			checkedVar0 = true
 		case "var1":
@@ -174,5 +174,16 @@ func TestSetConfigUpdateInterval(t *testing.T) {
 	SetConfigUpdateInterval(time.Minute)
 	if *configUpdateInterval != time.Minute {
 		t.Fatal("SetConfigUpdateInterval failed to update global.")
+	}
+}
+
+func TestMissingConfig(t *testing.T) {
+	parsed = false
+	*configUpdateInterval = 0
+	*allowMissingConfig = false
+	SetConfigFile("non-existent.ini")
+	err := SafeParse()
+	if err == nil {
+		t.Fatal("SafeParse claimed to parse non-existent file.")
 	}
 }

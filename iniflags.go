@@ -36,13 +36,8 @@ var (
 // via either -configUpdateInterval or SIGHUP.
 var Generation int
 
-// Parse obtains flag values from config file set via -config.
-//
-// It obtains flag values from command line like flag.Parse(), then overrides
-// them by values parsed from config file set via -config.
-//
-// Path to config file can also be set via SetConfigFile() before Parse() call.
-func Parse() {
+// Safe version of Parse() that returns errors instead of handling them.
+func SafeParse() error {
 	if parsed {
 		logger.Panicf("iniflags: duplicate call to iniflags.Parse() detected")
 	}
@@ -51,7 +46,7 @@ func Parse() {
 	flag.Parse()
 	_, ok := parseConfigFlags()
 	if !ok {
-		os.Exit(1)
+		return fmt.Errorf("could not parse config flags")
 	}
 
 	if *dumpflags {
@@ -70,6 +65,21 @@ func Parse() {
 	go sighupHandler(ch)
 
 	go configUpdater()
+
+	return nil
+}
+
+// Parse obtains flag values from config file set via -config.
+//
+// It obtains flag values from command line like flag.Parse(), then overrides
+// them by values parsed from config file set via -config.
+//
+// Path to config file can also be set via SetConfigFile() before Parse() call.
+func Parse() {
+	err := SafeParse()
+	if err != nil {
+		os.Exit(1)
+	}
 }
 
 func configUpdater() {
